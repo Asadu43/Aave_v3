@@ -14,7 +14,7 @@ describe("Aave Token", function () {
   let erc20Token: Contract;
   let usdtToken: Contract;
   let raiToken: Contract;
-  let flashLoanReceiver:Contract;
+  let flashLoanReceiver: Contract;
 
   const dai = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
   const usdt = "0xdAC17F958D2ee523a2206206994597C13D831ec7";
@@ -35,55 +35,34 @@ describe("Aave Token", function () {
 
     pool = await ethers.getContractAt("IPool", "0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9", signer);
     erc20Token = await ethers.getContractAt("IERC20", dai, signer);
-    //  usdtToken = await ethers.getContractAt("IERC20",usdt,signer)
     raiToken = await ethers.getContractAt("IERC20", rai, signer);
 
     const FlashLoanReceiver = await ethers.getContractFactory("FlashLoanReceiver");
     flashLoanReceiver = await FlashLoanReceiver.deploy();
 
-    
-    // pool = await IPool.deploy();
-
     hre.tracer.nameTags[pool.address] = "POOL";
   });
 
   it("Functions", async function () {
-
     // await raiToken.approve(pool.address,parseEther("1000"))
-
     // await raiToken.approve(pool.address,parseEther("1000"))
-
     // await pool.deposit(dai,parseEther("200"),signer.address,0);
-
     // await pool.setUserUseReserveAsCollateral(dai,false);
-
     // await pool.deposit(dai,parseEther("500"),signer.address,0);
-
     // await pool.supply(dai,parseEther("100"),signer.address,0)
     // await pool.deposit(usdc,parseEther("200"),signer.address,0);
-
     // await pool.borrow(usdt,parseEther("100"),2,0,signer.address)
-
     // console.log("Borrow..........");
-
     // await pool.borrow(busd,parseEther("50"),2,0,signer.address);
     // await pool.borrow(rai,parseEther("25"),2,0,signer.address);
     // await pool.borrow(rai,parseEther("25"),1,0,signer.address);
-
     // await pool.rebalanceStableBorrowRate(rai,signer.address)
-
     // console.log("Swap Borrow rate..........")
-
     // await pool.connect(signer).swapBorrowRateMode(rai,1);
-
     // console.log(await pool.getUserAccountData(signer.address));
-
     // await pool.liquidationCall(dai,rai,signer.address,constants.MaxUint256,false)
-
     // console.log("Repay..........");
-
     // await pool.withdraw(dai,constants.MaxUint256,signer.address)
-
     // console.log(await pool.getUserAccountData(signer.address));
   });
 
@@ -97,7 +76,6 @@ describe("Aave Token", function () {
 
   it("Deposit Token", async () => {
     await pool.deposit(dai, parseEther("500"), signer.address, 0);
-
   });
 
   it("Deposit Token gearter than approve", async () => {
@@ -132,9 +110,8 @@ describe("Aave Token", function () {
   });
 
   it("liquidationCall (Health factor is not below the threshold)", async () => {
-
     // 'Health factor is not below the threshold'
-    await expect(pool.liquidationCall(dai,rai,signer.address,constants.MaxUint256,true)).to.revertedWith("42")
+    await expect(pool.liquidationCall(dai, rai, signer.address, constants.MaxUint256, true)).to.revertedWith("42");
     // await raiToken.approve(pool.address, constants.MaxUint256);
   });
 
@@ -142,36 +119,32 @@ describe("Aave Token", function () {
     await pool.repay(rai, constants.MaxUint256, 2, signer.address);
   });
 
-
   it("Borrow Token with Stable Rate", async () => {
     // stable borrowing not enabled == 12
     await expect(pool.borrow(rai, parseEther("25"), 1, 0, signer.address)).to.be.revertedWith("12");
 
-  // console.log(await pool.MAX_STABLE_RATE_BORROW_SIZE_PERCENT());
+    // console.log(await pool.MAX_STABLE_RATE_BORROW_SIZE_PERCENT());
   });
 
-it("Flashloan",async () => {
+  it("Flashloan", async () => {
+    // need to first give some token to contract which are using for fee deduction
 
-  // need to first give some token to contract which are using for fee deduction
+    await raiToken.transfer(flashLoanReceiver.address, parseEther("10"));
 
-  await raiToken.transfer(flashLoanReceiver.address,parseEther("10"))
+    await pool.flashLoan(flashLoanReceiver.address, [rai], [parseEther("10000")], [0], signer.address, "0x10", 0);
 
-  await pool.flashLoan(flashLoanReceiver.address,[rai],[parseEther("10000")],[0],signer.address,"0x10",0)
+    // LP_INVALID_FLASH_LOAN_EXECUTOR_RETURN
+  });
 
-  // LP_INVALID_FLASH_LOAN_EXECUTOR_RETURN 
-  
-})
+  // it("Simple FlashLoan",async () => {
 
+  //   await raiToken.transfer(flashLoanSimpleReciver.address,parseEther("10"))
 
-// it("Simple FlashLoan",async () => {
+  //   await pool.flashLoanSimple(flashLoanSimpleReciver.address,rai,parseEther("100"),"0x",0)
 
-//   await raiToken.transfer(flashLoanSimpleReciver.address,parseEther("10"))
+  // })
 
-//   await pool.flashLoanSimple(flashLoanSimpleReciver.address,rai,parseEther("100"),"0x",0)
-  
-// })
-
-  // it("Withdraw Amount", async () => {
-  //   await pool.withdraw(dai, constants.MaxUint256, signer.address);
-  // });
+  it("Withdraw Amount", async () => {
+    await pool.withdraw(dai, constants.MaxUint256, signer.address);
+  });
 });
