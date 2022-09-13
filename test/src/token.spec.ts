@@ -23,6 +23,7 @@ describe("Aave Token", function () {
 
   const busd = "0x4Fabb145d64652a948d72533023f6E7A623C7C53";
   const rai = "0x03ab458634910AaD20eF5f1C8ee96F1D6ac54919";
+  const bat = "0x7abE0cE388281d2aCF297Cb089caef3819b13448";
 
   before(async () => {
     signer = await Impersonate("0x86f6ff8479c69E0cdEa641796b0D3bB1D40761Db");
@@ -40,18 +41,13 @@ describe("Aave Token", function () {
     const FlashLoanReceiver = await ethers.getContractFactory("FlashLoanReceiver");
     flashLoanReceiver = await FlashLoanReceiver.deploy();
 
-    await raiToken.transfer(flashLoanReceiver.address,parseEther("10"))
-
-
+    
     // pool = await IPool.deploy();
 
     hre.tracer.nameTags[pool.address] = "POOL";
   });
 
   it("Functions", async function () {
-
-    console.log(flashLoanReceiver.functions);
-
 
     // await raiToken.approve(pool.address,parseEther("1000"))
 
@@ -68,7 +64,7 @@ describe("Aave Token", function () {
 
     // await pool.borrow(usdt,parseEther("100"),2,0,signer.address)
 
-    console.log("Borrow..........");
+    // console.log("Borrow..........");
 
     // await pool.borrow(busd,parseEther("50"),2,0,signer.address);
     // await pool.borrow(rai,parseEther("25"),2,0,signer.address);
@@ -84,7 +80,7 @@ describe("Aave Token", function () {
 
     // await pool.liquidationCall(dai,rai,signer.address,constants.MaxUint256,false)
 
-    console.log("Repay..........");
+    // console.log("Repay..........");
 
     // await pool.withdraw(dai,constants.MaxUint256,signer.address)
 
@@ -102,7 +98,6 @@ describe("Aave Token", function () {
   it("Deposit Token", async () => {
     await pool.deposit(dai, parseEther("500"), signer.address, 0);
 
-    await raiToken.transfer(flashLoanReceiver.address,parseEther("10"))
   });
 
   it("Deposit Token gearter than approve", async () => {
@@ -157,11 +152,24 @@ describe("Aave Token", function () {
 
 it("Flashloan",async () => {
 
-  await pool.flashLoan(flashLoanReceiver.address,[rai],[parseEther("10000")],[0],signer.address,"0x",0)
+  // need to first give some token to contract which are using for fee deduction
+
+  await raiToken.transfer(flashLoanReceiver.address,parseEther("10"))
+
+  await pool.flashLoan(flashLoanReceiver.address,[rai],[parseEther("10000")],[0],signer.address,"0x10",0)
 
   // LP_INVALID_FLASH_LOAN_EXECUTOR_RETURN 
   
 })
+
+
+// it("Simple FlashLoan",async () => {
+
+//   await raiToken.transfer(flashLoanSimpleReciver.address,parseEther("10"))
+
+//   await pool.flashLoanSimple(flashLoanSimpleReciver.address,rai,parseEther("100"),"0x",0)
+  
+// })
 
   // it("Withdraw Amount", async () => {
   //   await pool.withdraw(dai, constants.MaxUint256, signer.address);
