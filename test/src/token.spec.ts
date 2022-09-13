@@ -43,7 +43,7 @@ describe("Aave Token", function () {
     hre.tracer.nameTags[pool.address] = "POOL";
   });
 
-  it("Functions", async function () {
+  // it("Functions", async function () {
     // await raiToken.approve(pool.address,parseEther("1000"))
     // await raiToken.approve(pool.address,parseEther("1000"))
     // await pool.deposit(dai,parseEther("200"),signer.address,0);
@@ -64,7 +64,7 @@ describe("Aave Token", function () {
     // console.log("Repay..........");
     // await pool.withdraw(dai,constants.MaxUint256,signer.address)
     // console.log(await pool.getUserAccountData(signer.address));
-  });
+  // });
 
   it("User Need To deposit Assests or Collateral", async () => {
     await expect(pool.deposit(dai, parseEther("500"), signer.address, 0)).to.be.revertedWith("SafeERC20: low-level call failed");
@@ -147,5 +147,5 @@ describe("Aave Token", function () {
   it("Withdraw Amount", async () => {
     await pool.withdraw(dai, constants.MaxUint256, signer.address);
   });
-  
+
 });
