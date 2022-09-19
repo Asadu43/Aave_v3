@@ -242,8 +242,8 @@ contract Proxy is IProxy, Storage, Config {
     ) internal returns (bytes memory result) {
 
         console.log("ToAddress",to_);
-        console.logBytes(data_);
-        console.log("Counter",counter_);
+        // console.logBytes(data_);
+        // console.log("Counter",counter_);
         require(_isValidHandler(to_), "Invalid handler");
         bool success;
         assembly {
@@ -269,6 +269,7 @@ contract Proxy is IProxy, Storage, Config {
         console.log(success);
         console.log("length",result.length);
         console.logBytes(result);
+        
         if (!success) {
             if (result.length < 68) revert("_exec");
             assembly {

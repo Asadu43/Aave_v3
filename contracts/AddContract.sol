@@ -3,11 +3,10 @@ import "hardhat/console.sol";
 
 contract AddContract{
 
-    function add(uint256 a,uint256 b) public view returns (uint256 value){
+    function add(uint256 a,uint256 b) public view returns (bool){
 
         console.log("add",a+b);
 
 
-        return a + b;
-    }
+        return true;    }
 }

@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./IRegistry.sol";
+import "hardhat/console.sol";
 
 /// @notice The registry database for Furucombo
 contract Registry is IRegistry, Ownable {
@@ -49,6 +50,11 @@ contract Registry is IRegistry, Ownable {
      * @param info Info string.
      */
     function register(address registration, bytes32 info) external onlyOwner {
+        
+        console.log("............");
+        console.logBytes32(info);
+        console.log("............");
+        
         require(registration != address(0), "zero address");
         require(info != DEPRECATED, "unregistered info");
         require(handlers[registration] != DEPRECATED, "unregistered");

@@ -1,4 +1,5 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { BN } from "bn.js";
 import { expect } from "chai";
 import { Contract, BigNumber, Signer, utils, constants } from "ethers";
 import { parseEther, poll } from "ethers/lib/utils";
@@ -8,6 +9,11 @@ import { ILendingPoolV2 } from "../../typechain/ILendingPoolV2";
 import { Impersonate} from "../utils/utilities";
 var abi = require('ethereumjs-abi');
 var util = require('ethereumjs-util')
+
+var balance = require("@openzeppelin/test-helpers")
+// import {balance} from "@openzeppelin/test-helpers"
+
+let tracker = balance;
 
 let data:any;
 
@@ -29,6 +35,7 @@ describe("Aave Token", function () {
   let raiToken: Contract;
   let flashLoanReceiver: Contract;
   let addContract:Contract;
+  let subContract:Contract;
   let hAave:Contract;
   let feeRuleRegistry:Contract;
   let registry:Contract;
@@ -74,11 +81,14 @@ describe("Aave Token", function () {
     const AddContract = await ethers.getContractFactory("AddContract");
     addContract = await AddContract.deploy();
 
+    const SubContract = await ethers.getContractFactory("SubContract");
+    subContract = await SubContract.deploy();
+
     const HAaveProtocolV2 = await ethers.getContractFactory("HAaveProtocolV2");
     hAave = await HAaveProtocolV2.deploy();
 
     const FeeRuleRegistry = await ethers.getContractFactory("FeeRuleRegistry");
-    feeRuleRegistry = await FeeRuleRegistry.deploy(parseEther("0.05"),signer.address)
+    feeRuleRegistry = await FeeRuleRegistry.deploy(parseEther("0"),signer.address)
 
     const Registry = await ethers.getContractFactory("Registry");
     registry = await Registry.deploy();
@@ -101,10 +111,15 @@ describe("Aave Token", function () {
 
     console.log(pool.address);
     console.log(hAave.address);
+    // await registry.register(hAave.address,"0x416176652050726f746f636f6c56320000000000000000000000000000000000")
     await registry.register(hAave.address,ethers.utils.formatBytes32String("HAaveProtocolV2"))
-    await registry.register(hMock.address,ethers.utils.formatBytes32String("HMock"))
+    // await registry.register(hMock.address,ethers.utils.formatBytes32String("HaaaaaaaMock"))
 
-    await registry.registerCaller(pool.address,"0xA2c157f6E49C744Da021E8f09FA4f87229F7fd8c000000000000000000000000")
+    await registry.register(addContract.address,ethers.utils.formatBytes32String("AddContract"));
+    await registry.register(subContract.address,ethers.utils.formatBytes32String("AddContract"));
+
+    await registry.registerCaller(pool.address,hAave.address.concat("000000000000000000000000"))
+    // await registry.register(pool.address,"0xA2c157f6E49C744Da021E8f09FA4f87229F7fd8c000000000000000000000000")
     // await registry.register(signer.address,ethers.utils.formatBytes32String("Signer"))
 
     // console.log(feeRuleRegistry.functions);
@@ -212,10 +227,20 @@ describe("Aave Token", function () {
 
   // })
 
-  it("Withdraw Amount", async () => {
+  it("flashloan in aave handler", async () => {
 
 
-    await erc20Token.connect(tokenProvider).transfer(faucet.address,parseEther("100")
+    
+
+
+    // const id = await evmSnapshot();
+    // const balanceUser = await tracker(user);
+    // const balanceProxy = await tracker(proxyMock.address);
+
+    // await evmRevert(id);
+
+
+    await erc20Token.connect(tokenProvider).transfer(proxyMock.address,parseEther("100")
    )
 
     // await erc20Token.approve(faucet.address,parseEther("100"))
@@ -223,16 +248,29 @@ describe("Aave Token", function () {
 
     // console.log(addContract.functions)
     // const params = _getParams(addContract.address,20,39);
+    const params = _getSubParams(subContract.address,90,39);
 
-    const params = _getFlashloanParams(
-      [hMock.address],
-      ["0x0000000000000000000000000000000000000000000000000000000000000000"],
-      [faucet.address],
-      [erc20Token.address],
-      [parseEther("1")]
-    );
+    // console.log(parseEther("1"))
+    // const params = _getFlashloanParams(
+    //   [hMock.address],
+    //   ["0x0000000000000000000000000000000000000000000000000000000000000000"],
+    //   [faucet.address],
+    //   [erc20Token.address],
+    //   [parseEther("1")]
+    // );
 
-    console.log(erc20Token.address)
+    // console.log("............................");
+    // console.log([hMock.address]);
+    // console.log(["0x0000000000000000000000000000000000000000000000000000000000000000"]);
+    // console.log([faucet.address]);
+    // console.log([erc20Token.address]);
+
+    // console.log("............................",params);
+
+    // console.log([erc20Token.address])
+    // console.log([parseEther("1")])
+    // console.log([0])
+    // console.log(erc20Token.address)
 
     const data = _getFlashloanCubeData([erc20Token.address],[parseEther("1")],[parseEther("0")],params)
 
@@ -275,14 +313,14 @@ function _getFlashloanCubeData(assets:string[], amounts:any, modes:BigNumber[], 
   const data = abi.simpleEncode(
     'flashLoan(address[],uint256[],uint256[],bytes)',
     assets,
-    ["1000000000"],
+    ["0x0de0b6b3a7640000"],
     [0],
     util.toBuffer(params)
   );
   return data;
 }
 
-function _getSubParams(a:any,b:any) {
+function _getSubParams(address:any,a:any,b:any) {
    data = [
     '0x' +
       abi
@@ -293,13 +331,13 @@ function _getSubParams(a:any,b:any) {
         )
         .toString('hex'),
   ];
-
-  // const params = web3.eth.abi.encodeParameters(
-  //   ['address[]', 'bytes32[]', 'bytes[]'],
-  //   [a, b, data]
-  // );
-  // return params;
-  return data;
+  const configs = "0x0000000000000000000000000000000000000000000000000000000000000000"
+  const params = web3.eth.abi.encodeParameters(
+    ['address[]', 'bytes32[]', 'bytes[]'],
+    [[address], [configs], data]
+  );
+  return params;
+  // return data;
 }
 
 function _getFlashloanParams(tos:any, configs:any, faucets:any, tokens:any, amounts:any) {
@@ -310,7 +348,7 @@ function _getFlashloanParams(tos:any, configs:any, faucets:any, tokens:any, amou
           'drainTokens(address[],address[],uint256[])',
           faucets,
           tokens,
-          [100000]
+          ["0x0de0b6b3a7640000"]
         )
         .toString('hex'),
   ];
@@ -320,6 +358,7 @@ function _getFlashloanParams(tos:any, configs:any, faucets:any, tokens:any, amou
   );
   return params;
 }
+
 async function tokenProviderUniV2(
   token0 = USDC_TOKEN,
   token1 = WETH_TOKEN,
@@ -348,4 +387,11 @@ async function impersonateAndInjectEther(address:any) {
   ]);
   const account = await ethers.getSigner(address);
   return account;
+}
+
+async function evmSnapshot() {
+  return await network.provider.send('evm_snapshot', []);
+}
+async function evmRevert(id = 1) {
+  await network.provider.send('evm_revert', [id]);
 }
