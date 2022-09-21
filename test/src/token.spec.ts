@@ -157,9 +157,7 @@ describe("Aave Token", function () {
         ["0x0000000000000000000000000000000000000000000000000000000000000000"],
         faucet.address,
         erc20Token.address,
-        "0x0de0b6b3a7640000",
-        addContract.address,
-        dataParam
+        "0x0de0b6b3a7640000"
       );
 
       console.log("Param",paramData);
@@ -209,8 +207,8 @@ function _getaddTwoParams(address: any, a: any, b: any) {
   return data;
 }
 
-function _getFlashloanParams(tos: any, configs: any, faucets: any, tokens: any, amounts: any,address2:any,param:any) {
-  const data = ["0x" + abi.simpleEncode("drainToken(address,address,uint256)", faucets, tokens, "0x0de0b6b3a7640000",address2,param).toString("hex")];
+function _getFlashloanParams(tos: any, configs: any, faucets: any, tokens: any, amounts: any) {
+  const data = ["0x" + abi.simpleEncode("drainToken(address,address,uint256)", faucets, tokens, "0x0de0b6b3a7640000").toString("hex")];
   const params = web3.eth.abi.encodeParameters(["address[]", "bytes32[]", "bytes[]"], [tos, configs, data]);
   return params;
 }
