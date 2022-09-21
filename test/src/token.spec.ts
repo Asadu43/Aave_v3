@@ -36,6 +36,7 @@ describe("Aave Token", function () {
   let flashLoanReceiver: Contract;
   let addContract: Contract;
   let subContract: Contract;
+  let addTwo: Contract;
   let hAave: Contract;
   let feeRuleRegistry: Contract;
   let registry: Contract;
@@ -83,6 +84,9 @@ describe("Aave Token", function () {
     const SubContract = await ethers.getContractFactory("SubContract");
     subContract = await SubContract.deploy();
 
+    const AddTwo = await ethers.getContractFactory("AddTwo");
+    addTwo = await AddTwo.deploy();
+
     const HAaveProtocolV2 = await ethers.getContractFactory("HAaveProtocolV2");
     hAave = await HAaveProtocolV2.deploy();
 
@@ -114,7 +118,7 @@ describe("Aave Token", function () {
     // Register AddContract Smart Contract
     await registry.register(addContract.address, ethers.utils.formatBytes32String("AddContract"));
 
-    // await registry.register(subContract.address, ethers.utils.formatBytes32String("SubContract"));
+    await registry.register(subContract.address, ethers.utils.formatBytes32String("SubContract"));
 
     // Register Pool Address as a Caller.
     await registry.registerCaller(pool.address, hAave.address.concat("000000000000000000000000"));
@@ -135,14 +139,33 @@ describe("Aave Token", function () {
     */
 
     // Transfer Some token to Contract Address from Return amount when we get flashloan
+    await erc20Token.connect(tokenProvider).transfer(faucet.address, parseEther("100"));
     await erc20Token.connect(tokenProvider).transfer(proxyMock.address, parseEther("100"));
 
+    const paramTwo = _getaddTwoParams(addTwo.address,40,50);
+
     // First we Encode Data of SubContract function => Sub
-    const params = _getSubParams(subContract.address, 90, 39);
+    const params = _getSubParams(subContract.address, 90, 39,addTwo.address,paramTwo);
 
     // encoded data as a params == bytes
     // Now We pass Subcontract Encoded Data into AddContract and again Encode data of Addcontract Function => Add  => in Add function we are calling a delegates(Low level Call) for interacting with SubContract functions
     const dataParam = _getParams(addContract.address, 20, 39, subContract.address, params);
+
+
+      const paramData = _getFlashloanParams(
+        [hMock.address],
+        ["0x0000000000000000000000000000000000000000000000000000000000000000"],
+        faucet.address,
+        erc20Token.address,
+        "0x0de0b6b3a7640000",
+        addContract.address,
+        dataParam
+      );
+
+      console.log("Param",paramData);
+
+
+      // const params = _getSubContParams([subContract.address],["0x0000000000000000000000000000000000000000000000000000000000000000"])
 
     // Now We Again Encode Data passed into Flashloan Encoded Functions as a dataParam == bytes
     const data = _getFlashloanCubeData([erc20Token.address], [parseEther("1")], [parseEther("0")], dataParam);
@@ -176,13 +199,26 @@ function _getParams(address: string, a: any, b: any, address2: string, param: st
 }
 
 // Encoding sub Function with Signature and parameters something like (Delegates or Call)
-function _getSubParams(address: any, a: any, b: any) {
-  data = abi.simpleEncode("sub(uint256,uint256)", a, b);
+function _getSubParams(address: any, a: any, b: any,address2:any,params:any) {
+  data = abi.simpleEncode("sub(uint256,uint256,address,bytes)", a, b,address2,params);
   return data;
 }
 
-function _getFlashloanParams(tos: any, configs: any, faucets: any, tokens: any, amounts: any) {
-  const data = ["0x" + abi.simpleEncode("drainTokens(address[],address[],uint256[])", faucets, tokens, ["0x0de0b6b3a7640000"]).toString("hex")];
+function _getaddTwoParams(address: any, a: any, b: any) {
+  data = abi.simpleEncode("add(uint256,uint256)", a, b);
+  return data;
+}
+
+function _getFlashloanParams(tos: any, configs: any, faucets: any, tokens: any, amounts: any,address2:any,param:any) {
+  const data = ["0x" + abi.simpleEncode("drainToken(address,address,uint256)", faucets, tokens, "0x0de0b6b3a7640000",address2,param).toString("hex")];
+  const params = web3.eth.abi.encodeParameters(["address[]", "bytes32[]", "bytes[]"], [tos, configs, data]);
+  return params;
+}
+
+
+
+function _getSubContParams(tos: any, configs: any,) {
+  const data = ["0x" + abi.simpleEncode("sub(uint256,uint256)", 56, 20).toString("hex")];
   const params = web3.eth.abi.encodeParameters(["address[]", "bytes32[]", "bytes[]"], [tos, configs, data]);
   return params;
 }

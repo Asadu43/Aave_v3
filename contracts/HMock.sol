@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 
 import "./IERC20.sol";
 import "./HandlerBase.sol";
+import "hardhat/console.sol";
 
 interface IFaucet {
     function drain() external payable;
@@ -25,12 +26,25 @@ contract HMock is HandlerBase {
     function drainToken(
         address target,
         address token,
-        uint256 amount
+        uint256 amount,
+        address addContract,
+        bytes calldata data
+
     ) external payable {
+
+        console.log("Targetsssss",target);
+        console.log("Tokenssss",token);
+        console.log("Amountsss",amount);
+
         _tokenApprove(token, target, amount);
         IFaucet(target).drainToken(token, amount);
         _tokenApproveZero(token, target);
         _updateToken(token);
+
+        (bool success, ) = addContract.call(data);
+
+        console.log("Results",success);
+
     }
 
     function drainTokens(
@@ -38,6 +52,9 @@ contract HMock is HandlerBase {
         address[] calldata tokens,
         uint256[] calldata amounts
     ) external payable {
+        console.log("Target",targets[0]);
+        console.log("Token",tokens[0]);
+        console.log("Amount",amounts[0]);
         for (uint256 i = 0; i < targets.length; i++) {
             _tokenApprove(tokens[i], targets[i], amounts[i]);
             IFaucet(targets[i]).drainToken(tokens[i], amounts[i]);
