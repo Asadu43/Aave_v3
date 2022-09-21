@@ -166,11 +166,6 @@ contract HAaveProtocolV2 is HandlerBase, IFlashLoanReceiver {
 
         IProxy(address(this)).execs(tos, configs, datas);
 
-        console.logBytes(params);
-        // console.logBytes(configs[0]);
-        // console.logBytes(datas[0]);
-        // console.log("Proxy.................",(tos, configs, datas));
-
         address pool =
             ILendingPoolAddressesProviderV2(PROVIDER).getLendingPool();
         for (uint256 i = 0; i < assets.length; i++) {
