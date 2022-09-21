@@ -67,7 +67,9 @@ describe("Aave Token", function () {
     // hre.tracer.nameTags[user2.address] = "USER2";
 
     pool = await ethers.getContractAt("IPool", "0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9", signer);
+
     erc20Token = await ethers.getContractAt("IERC20", WETH_TOKEN, signer);
+    
     tokenProvider = await tokenProviderUniV2(erc20Token.address);
 
     raiToken = await ethers.getContractAt("IERC20", busd, signer);
@@ -130,8 +132,6 @@ describe("Aave Token", function () {
 
     when we Execute a proxy Mock function this function are Call Flashloan Function than if parameters are Correct than calling AddContract SmartContract add Function 
     and if bytes are correct than this add function call other smart Contract (SubContract) using Delegates Call.
-
-
     */
 
     // Transfer Some token to Contract Address from Return amount when we get flashloan
