@@ -49,7 +49,7 @@ contract Registry is IRegistry, Ownable {
      * @param registration Handler address.
      * @param info Info string.
      */
-    function register(address registration, bytes32 info) external onlyOwner {   
+    function register(address registration, bytes32 info) external onlyOwner {  
         require(registration != address(0), "zero address");
         require(info != DEPRECATED, "unregistered info");
         require(handlers[registration] != DEPRECATED, "unregistered");

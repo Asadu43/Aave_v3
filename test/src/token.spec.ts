@@ -8,14 +8,14 @@ import Web3 from "web3";
 import { ILendingPoolV2 } from "../../typechain/ILendingPoolV2";
 import { Impersonate } from "../utils/utilities";
 import abi from "ethereumjs-abi";
+import { parse } from "path";
 var util = require("ethereumjs-util");
 
 var balance = require("@openzeppelin/test-helpers");
 // import {balance} from "@openzeppelin/test-helpers"
 
 let tracker = balance;
-
-let data: any;
+let data:any;
 
 const web3 = new Web3();
 const UNISWAPV2_FACTORY = "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f";
@@ -47,6 +47,7 @@ describe("Aave Token", function () {
   let lendingPoolAddress: Contract;
   let faucet: Contract;
   let tokenProvider: any;
+  let atoken:any;
 
   const dai = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
   const usdt = "0xdAC17F958D2ee523a2206206994597C13D831ec7";
@@ -56,11 +57,12 @@ describe("Aave Token", function () {
   const busd = "0x4Fabb145d64652a948d72533023f6E7A623C7C53";
   const rai = "0x03ab458634910AaD20eF5f1C8ee96F1D6ac54919";
   const bat = "0x7abE0cE388281d2aCF297Cb089caef3819b13448";
+  const aToken = "0x030ba81f1c18d280636f32af80b9aad02cf0854e";
 
   const AAVEPROTOCOL_V2_PROVIDER = "0xB53C1a33016B2DC2fF3653530bfF1848a515c8c5";
 
   before(async () => {
-    signer = await Impersonate("0x06920C9fC643De77B99cB7670A944AD31eaAA260");
+    signer = await Impersonate("0x10bf1Dcb5ab7860baB1C3320163C6dddf8DCC0e4");
     user = await Impersonate("0xa4b8339D2162125b33A667b0D40aC5dec27E924b");
 
     hre.tracer.nameTags[signer.address] = "ADMIN";
@@ -69,11 +71,14 @@ describe("Aave Token", function () {
 
     pool = await ethers.getContractAt("IPool", "0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9", signer);
 
-    erc20Token = await ethers.getContractAt("IERC20", WETH_TOKEN, signer);
-    
+    erc20Token = await ethers.getContractAt("IERC20", WETH_TOKEN, signer);    
+    atoken = await ethers.getContractAt("IERC20", aToken, signer);    
     tokenProvider = await tokenProviderUniV2(erc20Token.address);
 
-    raiToken = await ethers.getContractAt("IERC20", busd, signer);
+    console.log("Provider",tokenProvider.address);
+    
+
+    raiToken = await ethers.getContractAt("IERC20", rai, signer);
 
     const FlashLoanReceiver = await ethers.getContractFactory("FlashLoanReceiver");
     flashLoanReceiver = await FlashLoanReceiver.deploy();
@@ -110,69 +115,84 @@ describe("Aave Token", function () {
 
   it("Functions", async function () {
     // Register Aave handler Smart Contract
-    await registry.register(hAave.address, ethers.utils.formatBytes32String("HAaveProtocolV2"));
+    await registry.register(hAave.address, ethers.utils.formatBytes32String("AaveProtocolV2"));
 
     // Register Aave handler Mock Smart Contract
     await registry.register(hMock.address, ethers.utils.formatBytes32String("HaaaaaaaMock"));
 
-    // Register AddContract Smart Contract
-    await registry.register(addContract.address, ethers.utils.formatBytes32String("AddContract"));
+    // // Register AddContract Smart Contract
+    // await registry.register(addContract.address, ethers.utils.formatBytes32String("AddContract"));
 
-    await registry.register(subContract.address, ethers.utils.formatBytes32String("SubContract"));
+    // await registry.register(subContract.address, ethers.utils.formatBytes32String("SubContract"));
 
-    // Register Pool Address as a Caller.
+    // // Register Pool Address as a Caller.
     await registry.registerCaller(pool.address, hAave.address.concat("000000000000000000000000"));
+    // await registry.register(pool.address, ethers.utils.formatBytes32String("Pool"));
   });
 
   it("Calling Nested Smart Contract Using Bytes", async () => {
 
-    /*
-    In this all process we are going to Calling a nested Smart Contract using bytes
-
-    1 => First We Encode Data of Specific Function which we are Calling Something likes (Delegates or Call) That All We performs in TypeScript 
-    For That we Are Using a NPM package ( ethereumjs-abi ) this function provide encoded data of specific functions which we are trying to Calling.
-    
-    2 => than pass Encoded data One Smart Contract to Another as bytes.
-
-    when we Execute a proxy Mock function this function are Call Flashloan Function than if parameters are Correct than calling AddContract SmartContract add Function 
-    and if bytes are correct than this add function call other smart Contract (SubContract) using Delegates Call.
-    */
-
-    // Transfer Some token to Contract Address from Return amount when we get flashloan
-    await erc20Token.connect(tokenProvider).transfer(faucet.address, parseEther("100"));
-    await erc20Token.connect(tokenProvider).transfer(proxyMock.address, parseEther("100"));
-
-    const paramTwo = _getaddTwoParams(addTwo.address,40,50);
-
-    // First we Encode Data of SubContract function => Sub
-    const params = _getSubParams(subContract.address, 90, 39,addTwo.address,paramTwo);
-
-    // encoded data as a params == bytes
-    // Now We pass Subcontract Encoded Data into AddContract and again Encode data of Addcontract Function => Add  => in Add function we are calling a delegates(Low level Call) for interacting with SubContract functions
-    const dataParam = _getParams(addContract.address, 20, 39, subContract.address, params);
-
-
-      const paramData = _getFlashloanParams(
-        [hMock.address],
-        ["0x0000000000000000000000000000000000000000000000000000000000000000"],
-        faucet.address,
-        erc20Token.address,
-        "0x0de0b6b3a7640000"
-      );
-
-      console.log("Param",paramData);
-
-
+      // await erc20Token.connect(tokenProvider).approve(proxyMock.address,parseEther("100"))
       // const params = _getSubContParams([subContract.address],["0x0000000000000000000000000000000000000000000000000000000000000000"])
 
     // Now We Again Encode Data passed into Flashloan Encoded Functions as a dataParam == bytes
-    const data = _getFlashloanCubeData([erc20Token.address], [parseEther("1")], [parseEther("0")], dataParam);
+    const data = abi.simpleEncode(
+      'deposit(address,uint256)',
+      erc20Token.address,
+      parseEther("100").toHexString());
+
+
+    // const data = abi.simpleEncode("depositETH(uint256)","0x8ac7230489e80000");
+
+
+    // const data = _getFlashloanCubeData([erc20Token.address], [parseEther("1")], [parseEther("0")], paramData);
+
+    await erc20Token.connect(tokenProvider).transfer(proxyMock.address,parseEther("100"));
+    // await proxyMock.updateTokenMock(erc20Token.address);
 
     const to = hAave.address;
-
     // now We Calling a proxy Function that are already using a low level Call in which we Are Calling a flashloan function
-    await proxyMock.execMock(to, data, { value: parseEther("1") });
+    await proxyMock.execMock(to, data, {value: parseEther("10")});
+
   });
+
+  it("Desposit Ether", async () => {
+  const data = abi.simpleEncode("depositETH(uint256)",parseEther("10").toHexString());
+
+  const to = hAave.address;
+  // now We Calling a proxy Function that are already using a low level Call in which we Are Calling a flashloan function
+  // await proxyMock.execMock(to, data, {value: parseEther("10")});
+
+});
+
+
+
+it("Withdrw Eth", async () => {
+  const data = abi.simpleEncode('withdrawETH(uint256)', parseEther("5").toHexString());
+
+
+  await atoken.transfer(proxyMock.address,parseEther("5"))
+
+  const to = hAave.address;
+
+  await proxyMock.execMock(to, data, {value: parseEther("0.1")});
+
+});
+
+// it("Withdrw Tokken", async () => {
+//           const data = abi.simpleEncode(
+//           'withdraw(address,uint256)',
+//           erc20Token.address,
+//           parseEther("20").toHexString()
+//         );
+
+//   const to = hAave.address;
+
+//   await proxyMock.execMock(to, data, {value: parseEther("0.1")});
+
+// });
+
+
 });
 
 
@@ -180,6 +200,12 @@ describe("Aave Token", function () {
 
 
 // Encoding Flashloan Function with Signature and parameters
+function _getDepositData(assets: string) {
+  const data = abi.simpleEncode("deposit(address,uint256)", assets,"0x056bc75e2d63100000");
+  return data;
+}
+
+
 function _getFlashloanCubeData(assets: string[], amounts: any, modes: BigNumber[], params: any) {
   const data = abi.simpleEncode("flashLoan(address[],uint256[],uint256[],bytes)", assets, ["0x0de0b6b3a7640000"], [0], util.toBuffer(params));
   return data;
@@ -231,6 +257,8 @@ async function tokenProviderUniV2(token0 = USDC_TOKEN, token1 = WETH_TOKEN, fact
 async function _tokenProviderUniLike(token0: any, token1: any, factoryAddress: any) {
   const factory = await ethers.getContractAt("IUniswapV2Factory", factoryAddress);
   const pair = await factory.getPair(token0, token1);
+
+  console.log("Pair",pair)
   return impersonateAndInjectEther(pair);
 }
 async function impersonateAndInjectEther(address: any) {
@@ -240,5 +268,6 @@ async function impersonateAndInjectEther(address: any) {
   // Inject 1 ether
   await network.provider.send("hardhat_setBalance", [address, "0xde0b6b3a7640000"]);
   const account = await ethers.getSigner(address);
+
   return account;
 }

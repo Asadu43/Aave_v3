@@ -27,7 +27,10 @@ contract HAaveProtocolV2 is HandlerBase, IFlashLoanReceiver {
     }
 
     function deposit(address asset, uint256 amount) external payable {
+        console.log("assets",asset);
+        console.log("amount",amount);
         amount = _getBalance(asset, amount);
+        console.log("amount2",amount);
         _deposit(asset, amount);
     }
 
@@ -178,7 +181,11 @@ contract HAaveProtocolV2 is HandlerBase, IFlashLoanReceiver {
     /* ========== INTERNAL FUNCTIONS ========== */
 
     function _deposit(address asset, uint256 amount) internal {
+        console.log("Assets",asset);
         (address pool, address aToken) = _getLendingPoolAndAToken(asset);
+
+        console.log("pool",pool);
+
         _tokenApprove(asset, pool, amount);
 
         try
@@ -275,6 +282,7 @@ contract HAaveProtocolV2 is HandlerBase, IFlashLoanReceiver {
         try ILendingPoolV2(pool).getReserveData(underlying) returns (
             DataTypes.ReserveData memory data
         ) {
+            console.log("after");
             aToken = data.aTokenAddress;
             _requireMsg(
                 aToken != address(0),
@@ -282,8 +290,10 @@ contract HAaveProtocolV2 is HandlerBase, IFlashLoanReceiver {
                 "aToken should not be zero address"
             );
         } catch Error(string memory reason) {
+            console.log(reason);
             _revertMsg("General", reason);
         } catch {
+            console.log("General");
             _revertMsg("General");
         }
     }
